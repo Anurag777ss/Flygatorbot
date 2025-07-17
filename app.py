@@ -1,52 +1,53 @@
-
 from flask import Flask, request
 import requests
 
 app = Flask(__name__)
 
-TELEGRAM_TOKEN = "YOUR_TELEGRAM_TOKEN"
-TRAVELPAYOUT_TOKEN = "YOUR_TRAVELPAYOUT_TOKEN"
-TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
-
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    data = request.get_json()
-    if "message" in data:
-        chat_id = data["message"]["chat"]["id"]
-        text = data["message"].get("text", "")
-
-        if text.startswith("/start"):
-            send_message(chat_id, "Welcome to FlyGatorBot! ✈️ Send me a city or airport name to search flights.")
-
-        else:
-            reply = search_flights(text)
-            send_message(chat_id, reply)
-
-    return "ok", 200
+BOT_TOKEN = "7765244851:AAG25jPMQGeVwz4kdfhJxSbspuae4Sg-Y6w"
+TP_API_TOKEN = "e9dff32d8528b74f272c6dfde795be68"
+TP_API_URL = "https://api.travelpayouts.com/aviasales/v3/prices_for_dates"
 
 def send_message(chat_id, text):
-    url = f"{TELEGRAM_API_URL}/sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
-    requests.post(url, json=payload)
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    data = {"chat_id": chat_id, "text": text}
+    requests.post(url, data=data)
 
-def search_flights(query):
-    url = f"https://api.travelpayouts.com/aviasales/v3/prices_for_dates"
-    params = {
-        "origin": query[:3].upper(),
-        "destination": "DEL",
-        "depart_date": "2025-08-01",
-        "return_date": "2025-08-10",
-        "token": TRAVELPAYOUT_TOKEN
-    }
-    res = requests.get(url, params=params)
-    if res.status_code == 200:
-        data = res.json().get("data", [])
-        if not data:
-            return "No flights found. Try another airport or city."
-        flights = [f"{d['value']} INR - {d['depart_date']} to {d['return_date']}" for d in data[:3]]
-        return "\n".join(flights)
-    else:
-        return "Flight search failed. Try again later."
+@app.route("/", methods=["POST"])
+def webhook():
+    data = request.get_json()
+    message = data.get("message", {})
+    chat_id = message.get("chat", {}).get("id")
+    text = message.get("text", "")
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    if text and chat_id:
+        try:
+            # Split user input: "DEL BOM 2025-08-01"
+            parts = text.strip().split()
+            if len(parts) == 3:
+                origin, destination, date = parts
+                params = {
+                    "origin": origin.upper(),
+                    "destination": destination.upper(),
+                    "depart_date": date,
+                    "one_way": "true",
+                    "currency": "INR",
+                    "token": TP_API_TOKEN
+                }
+                r = requests.get(TP_API_URL, params=params)
+                data = r.json()
+
+                if data.get("data"):
+                    price = data["data"][0]["value"]
+                    airline = data["data"][0]["airline"]
+                    result = f"🛫 {origin} → {destination}\n📅 Date: {date}\n✈ Airline: {airline}\n💸 Price: ₹{price}"
+                else:
+                    result = "❌ No flights found for this route/date."
+            else:
+                result = "Please send in format:\n`DEL BOM 2025-08-01`"
+
+            send_message(chat_id, result)
+
+        except Exception as e:
+            send_message(chat_id, "⚠️ Error: " + str(e))
+
+    return "ok"
