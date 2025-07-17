@@ -4,8 +4,8 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TRAVELPAYOUTS_TOKEN = os.getenv("TRAVELPAYOUTS_TOKEN")
+TELEGRAM_TOKEN = os.getenv("7765244851:AAG25jPMQGeVwz4kdfhJxSbspuae4Sg-Y6w")
+TRAVELPAYOUTS_TOKEN = os.getenv("e9dff32d8528b74f272c6dfde795be68")
 
 def send_message(chat_id, text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
