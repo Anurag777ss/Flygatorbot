@@ -15,7 +15,7 @@ def telegram_webhook():
     text = data["message"].get("text", "")
 
     if text.startswith("/start"):
-        send_message(chat_id, "Welcome to FlyGator Bot ✈️
+        send_message(chat_id, "Welcome to FlyGator Bot ✈️"
 Send your flight query like:
 Delhi to Mumbai on 2024-08-01")
     elif "to" in text.lower():
