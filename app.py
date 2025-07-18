@@ -15,13 +15,17 @@ def telegram_webhook():
     text = data["message"].get("text", "")
 
     if text.startswith("/start"):
-    send_message(chat_id, """Welcome to FlyGator Bot ✈️
+        send_message(chat_id, """Welcome to FlyGator Bot ✈️
 Send your flight query like:
 Delhi to Mumbai on 2024-08-01""")
+    
+    elif "to" in text.lower() and "on" in text.lower():
         reply = get_flight_data(text)
         send_message(chat_id, reply)
+    
     else:
         send_message(chat_id, "❗Invalid format.\nTry: Delhi to Mumbai on 2024-08-01")
+    
     return "ok"
 
 def get_flight_data(query):
@@ -40,6 +44,7 @@ def get_flight_data(query):
             "currency": "INR",
             "token": TP_TOKEN
         }
+
         res = requests.get(url, params=params).json()
 
         if res.get("data"):
@@ -47,13 +52,12 @@ def get_flight_data(query):
             price = ticket["price"]
             airline = ticket["airline"]
             flight_date = ticket["departure_at"]
-            return f"🎫 {origin.upper()} to {dest.upper()}
+            return f"""🎫 {origin.upper()} to {dest.upper()}
 Airline: {airline}
 Date: {flight_date}
-Price: ₹{price}"
+Price: ₹{price}"""
         else:
             return "No flights found for that route/date."
-
     except Exception as e:
         return "Something went wrong. Please try again."
 
